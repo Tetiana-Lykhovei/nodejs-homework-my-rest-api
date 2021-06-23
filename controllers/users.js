@@ -1,7 +1,10 @@
 const Users = require("../repositories/users");
 const { HttpCode } = require("../helpers/constants");
 const jwt = require("jsonwebtoken");
+const fs = require("fs/promises");
 require("dotenv").config();
+
+const UploadAvatarService = require("../services/cloud-upload");
 
 const SECRET_KEY = process.env.SECRET_KEY;
 
@@ -15,12 +18,14 @@ const signup = async (req, res, next) => {
         message: "Email in use",
       });
     }
-    const { id, email, subscription } = await Users.createUser(req.body);
+    const { id, email, subscription, avatar } = await Users.cteateUser(
+      req.body
+    );
 
     return res.status(HttpCode.CREATED).json({
       status: "success",
       code: HttpCode.CREATED,
-      data: { id, email, subscription },
+      data: { id, email, subscription, avatar },
     });
   } catch (e) {
     console.log(e);
@@ -86,4 +91,24 @@ const current = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, logout, current };
+// *****SECOND OPTION: cloud upload*********
+
+const avatars = async (req, res, next) => {
+  try {
+    const id = req.user.id;
+    const uploads = new UploadAvatarService();
+    const { idCloudAvatar, avatarURL } = await uploads.saveAvatar(
+      req.file.path,
+      req.user.idCloudAvatar
+    );
+
+    await fs.unlink(req.file.path);
+
+    await Users.updateAvatar(id, avatarURL, idCloudAvatar);
+    res.json({ status: "success", code: HttpCode.OK, data: { avatarURL } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signup, login, logout, current, avatars };
