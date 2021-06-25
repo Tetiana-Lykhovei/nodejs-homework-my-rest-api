@@ -4,6 +4,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const boolParser = require("express-query-boolean");
+const path = require("path");
+require("dotenv").config();
+const AVATAR_OF_USERS = process.env.AVATAR_OF_USERS;
 
 const { HttpCode, limiterApi } = require("./helpers/constants");
 
@@ -12,7 +15,8 @@ const app = express();
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
 app.use(helmet());
-app.use(logger(formatsLogger));
+app.use(express.static(path.join(__dirname, AVATAR_OF_USERS)));
+app.get("env") !== "test" && app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json({ limit: 10000 }));
 app.use(boolParser());
@@ -28,10 +32,12 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  const status = err.status || HttpCode.INTERNAL_SERVER_ERROR;
-  res
-    .status(status)
-    .json({ status: "fail", code: status, message: err.message });
+  const codeStatus = err.status || HttpCode.INTERNAL_SERVER_ERROR;
+  res.status(codeStatus).json({
+    status: codeStatus === HttpCode.INTERNAL_SERVER_ERROR ? "fail" : "error",
+    code: codeStatus,
+    message: err.message,
+  });
 });
 
 process.on("unhandledRejection", (reason, promise) => {

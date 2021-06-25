@@ -1,14 +1,13 @@
 const { Schema, model } = require("mongoose");
+const gr = require("gravatar");
+const { nanoid } = require("nanoid");
 const { Subscription } = require("../helpers/constants");
 const bcrypt = require("bcryptjs");
 const SALT_WORK_FACTOR = 6;
 
 const userSchema = new Schema(
   {
-    password: {
-      type: String,
-      required: [true, "Password is required"],
-    },
+    name: { type: String, default: "Guest" },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -17,6 +16,10 @@ const userSchema = new Schema(
         const re = /\S+@\S+\.\S+/g;
         return re.test(String(value).toLowerCase());
       },
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
     },
     subscription: {
       type: String,
@@ -27,6 +30,18 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
+    avatar: {
+      type: String,
+      defailt: function () {
+        return gr.url(this.email, { s: "250" }, true);
+      },
+    },
+    idCloudAvatar: {
+      type: String,
+      default: null,
+    },
+    isVerified: { type: Boolean, default: false },
+    verifyToken: { type: String, required: true, default: nanoid() },
   },
   {
     versionKey: false,
