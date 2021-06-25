@@ -1,14 +1,11 @@
 const { Schema, model } = require("mongoose");
+const gr = require("gravatar");
 const { Subscription } = require("../helpers/constants");
 const bcrypt = require("bcryptjs");
 const SALT_WORK_FACTOR = 6;
 
 const userSchema = new Schema(
   {
-    password: {
-      type: String,
-      required: [true, "Password is required"],
-    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -18,12 +15,26 @@ const userSchema = new Schema(
         return re.test(String(value).toLowerCase());
       },
     },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+    },
     subscription: {
       type: String,
       enum: [Subscription.STARTER, Subscription.PRO, Subscription.BUSINESS],
       default: Subscription.STARTER,
     },
     token: {
+      type: String,
+      default: null,
+    },
+    avatar: {
+      type: String,
+      defailt: function () {
+        return gr.url(this.email, { s: "250" }, true);
+      },
+    },
+    idCloudAvatar: {
       type: String,
       default: null,
     },
